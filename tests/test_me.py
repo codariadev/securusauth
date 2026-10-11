@@ -1,11 +1,10 @@
-import pytest
-
 from datetime import datetime, timedelta, timezone
 
 import jwt
 import pytest
 
 from src.app.config import settings
+
 
 def test_me_with_valid_token(client, registered_user, auth_header):
     login = client.post(
@@ -21,6 +20,7 @@ def test_me_with_valid_token(client, registered_user, auth_header):
 
     assert response.status_code == 200
     assert response.json()["email"] == registered_user["email"]
+
 
 FUTURE = datetime.now(timezone.utc) + timedelta(minutes=10)
 

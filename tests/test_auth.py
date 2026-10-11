@@ -1,5 +1,3 @@
-
-
 def test_login_success(client, registered_user):
     response = client.post(
         "/login",
@@ -93,5 +91,3 @@ def test_login_errors_are_indistinguishable(client, registered_user):
 
     assert wrong_password.status_code == unknown_user.status_code
     assert wrong_password.json()["detail"] == unknown_user.json()["detail"]
-
-

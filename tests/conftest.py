@@ -51,6 +51,7 @@ def auth_header():
 
     return _build
 
+
 @pytest.fixture
 def registered_user(client):
     credentials = {"email": "ana@exemplo.com", "password": "senha123"}

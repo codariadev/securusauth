@@ -1,5 +1,6 @@
 import pytest
 
+
 def test_register_success(client):
     payload = {"email": "ana@example.com", "password": "senha123"}
 
@@ -55,4 +56,3 @@ def test_register_is_case_insensitive(client):
 def test_register_invalid_input(client, payload):
     response = client.post("/register", json=payload)
     assert response.status_code == 422
-
