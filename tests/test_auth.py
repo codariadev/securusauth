@@ -1,73 +1,3 @@
-from datetime import datetime, timedelta, timezone
-
-import jwt
-import pytest
-
-from src.app.config import settings
-
-
-def test_register_success(client):
-    payload = {"email": "ana@example.com", "password": "senha123"}
-
-    response = client.post("/register", json=payload)
-
-    assert response.status_code == 201
-    body = response.json()
-    assert body["email"] == payload["email"]
-    assert "password" not in body
-    assert "hashed_password" not in body
-
-
-def test_register_duplicate_email(client):
-    payload = [
-        {"email": "ana@example.com", "password": "senha123"},
-        {"email": "ana@example.com", "password": "outrasenha"},
-    ]
-
-    assert payload[0]["email"] == payload[1]["email"]
-
-    first = client.post("/register", json=payload[0])
-    second = client.post("/register", json=payload[1])
-
-    assert first.status_code == 201
-    assert second.status_code == 409
-
-
-def test_register_is_case_insensitive(client):
-    email = "Ana@example.com"
-
-    first = client.post("/register", json={"email": email, "password": "senha1234"})
-    second = client.post(
-        "/register", json={"email": email.lower(), "password": "senha1234"}
-    )
-
-    assert first.json()["email"] == email.lower()
-    assert second.status_code == 409
-
-
-@pytest.mark.parametrize(
-    "payload",
-    [
-        {"email": "ana@example.com", "password": "123"},  # senha curta
-        {"email": "isso-nao-e-email", "password": "senha1234"},  # e-mail inválido
-        {
-            "email": "ana@example.com",
-            "password": "ç" * 37,
-        },  # 37 caracteres, mas 74 bytes
-        {"password": "senha1234"},  # falta o e-mail
-    ],
-    ids=["senha-curta", "email-invalido", "senha-acima-de-72-bytes", "sem-email"],
-)
-def test_register_invalid_input(client, payload):
-    response = client.post("/register", json=payload)
-    assert response.status_code == 422
-
-
-@pytest.fixture
-def registered_user(client):
-    credentials = {"email": "ana@exemplo.com", "password": "senha123"}
-    client.post("/register", json=credentials)
-    return credentials
 
 
 def test_login_success(client, registered_user):
@@ -153,22 +83,6 @@ def test_login_expired_token(client, registered_user, auth_header):
     assert response.status_code == 401
 
 
-def test_me_with_valid_token(client, registered_user, auth_header):
-    login = client.post(
-        "/login",
-        data={
-            "username": registered_user["email"],
-            "password": registered_user["password"],
-        },
-    )
-    token = login.json()["access_token"]
-
-    response = client.get("/me", headers=auth_header(token))
-
-    assert response.status_code == 200
-    assert response.json()["email"] == registered_user["email"]
-
-
 def test_login_errors_are_indistinguishable(client, registered_user):
     wrong_password = client.post(
         "/login", data={"username": registered_user["email"], "password": "senhaerrada"}
@@ -181,26 +95,3 @@ def test_login_errors_are_indistinguishable(client, registered_user):
     assert wrong_password.json()["detail"] == unknown_user.json()["detail"]
 
 
-FUTURE = datetime.now(timezone.utc) + timedelta(minutes=10)
-
-
-def make_token(claims, key=settings.secret_key):
-    return jwt.encode(claims, key, algorithm=settings.algorithm)
-
-
-@pytest.mark.parametrize(
-    "token",
-    [
-        "isso-nao-e-um-token",
-        make_token(
-            {"sub": "ana@exemplo.com", "exp": FUTURE},
-            key="outra-chave-de-teste-com-mais-de-32-bytes",
-        ),  # outra chave
-        make_token({"sub": "...", "exp": FUTURE}),  # usuário inexistente
-        make_token({"exp": FUTURE}),  # sem sub
-    ],
-    ids=["nao-e-jwt", "outra-chave", "usuario-inexistente", "sem-sub"],
-)
-def test_me_rejects_invalid_tokens(client, registered_user, token, auth_header):
-    response = client.get("/me", headers=auth_header(token))
-    assert response.status_code == 401

@@ -50,3 +50,9 @@ def auth_header():
         return {"Authorization": f"Bearer {token}"}
 
     return _build
+
+@pytest.fixture
+def registered_user(client):
+    credentials = {"email": "ana@exemplo.com", "password": "senha123"}
+    client.post("/register", json=credentials)
+    return credentials
