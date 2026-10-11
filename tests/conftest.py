@@ -1,6 +1,6 @@
 import os
 
-os.environ["SECRET_KEY"] = "chave-usada-somente-nos-testes"
+os.environ["SECRET_KEY"] = "chave-usada-somente-nos-testes-0123456789"
 os.environ["DATABASE_URL"] = "sqlite://"
 
 import pytest
