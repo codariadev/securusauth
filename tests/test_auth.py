@@ -1,4 +1,9 @@
+from datetime import datetime, timedelta, timezone
+
+import jwt
 import pytest
+
+from src.app.config import settings
 
 
 def test_register_success(client):
@@ -96,7 +101,7 @@ def test_login_nonexistent_user(client):
     assert response.status_code == 401
 
 
-def test_login_adulterated_token_token(client, registered_user):
+def test_login_adulterated_token_toke(client, registered_user, auth_header):
     response = client.post(
         "/login",
         data={
@@ -108,14 +113,12 @@ def test_login_adulterated_token_token(client, registered_user):
 
     adulterated_token = token + "adulterated"
 
-    response = client.get(
-        "/me", headers={"Authorization": f"Bearer {adulterated_token}"}
-    )
+    response = client.get("/me", headers=auth_header(adulterated_token))
 
     assert response.status_code == 401
 
 
-def test_login_invalid_token(client, registered_user):
+def test_login_invalid_token(client, registered_user, auth_header):
     response = client.post(
         "/login",
         data={
@@ -126,11 +129,11 @@ def test_login_invalid_token(client, registered_user):
     token = response.json()["access_token"]
 
     invalid_token = token + "invalid"
-    response = client.get("/me", headers={"Authorization": f"Bearer {invalid_token}"})
+    response = client.get("/me", headers=auth_header(invalid_token))
     assert response.status_code == 401
 
 
-def test_login_expired_token(client, registered_user):
+def test_login_expired_token(client, registered_user, auth_header):
     from datetime import datetime, timedelta, timezone
 
     import jwt
@@ -146,11 +149,11 @@ def test_login_expired_token(client, registered_user):
         algorithm=settings.algorithm,
     )
 
-    response = client.get("/me", headers={"Authorization": f"Bearer {expired_token}"})
+    response = client.get("/me", headers=auth_header(expired_token))
     assert response.status_code == 401
 
 
-def test_me_with_valid_token(client, registered_user):
+def test_me_with_valid_token(client, registered_user, auth_header):
     login = client.post(
         "/login",
         data={
@@ -160,7 +163,7 @@ def test_me_with_valid_token(client, registered_user):
     )
     token = login.json()["access_token"]
 
-    response = client.get("/me", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/me", headers=auth_header(token))
 
     assert response.status_code == 200
     assert response.json()["email"] == registered_user["email"]
@@ -176,3 +179,28 @@ def test_login_errors_are_indistinguishable(client, registered_user):
 
     assert wrong_password.status_code == unknown_user.status_code
     assert wrong_password.json()["detail"] == unknown_user.json()["detail"]
+
+
+FUTURE = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+
+def make_token(claims, key=settings.secret_key):
+    return jwt.encode(claims, key, algorithm=settings.algorithm)
+
+
+@pytest.mark.parametrize(
+    "token",
+    [
+        "isso-nao-e-um-token",
+        make_token(
+            {"sub": "ana@exemplo.com", "exp": FUTURE},
+            key="outra-chave-de-teste-com-mais-de-32-bytes",
+        ),  # outra chave
+        make_token({"sub": "...", "exp": FUTURE}),  # usuário inexistente
+        make_token({"exp": FUTURE}),  # sem sub
+    ],
+    ids=["nao-e-jwt", "outra-chave", "usuario-inexistente", "sem-sub"],
+)
+def test_me_rejects_invalid_tokens(client, registered_user, token, auth_header):
+    response = client.get("/me", headers=auth_header(token))
+    assert response.status_code == 401
