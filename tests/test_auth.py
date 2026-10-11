@@ -91,3 +91,16 @@ def test_login_errors_are_indistinguishable(client, registered_user):
 
     assert wrong_password.status_code == unknown_user.status_code
     assert wrong_password.json()["detail"] == unknown_user.json()["detail"]
+
+
+def test_login_rejects_password_over_72_bytes(client, registered_user):
+    response = client.post(
+        "/login",
+        data={
+            "username": registered_user["email"],
+            "password": "ç" * 37,
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Email ou senha incorretos"

@@ -41,3 +41,10 @@ def test_access_token_contains_sub_and_exp():
     assert payload["sub"] == "ana@exemplo.com"
     assert "exp" in payload
     assert payload["exp"] > datetime.now(timezone.utc).timestamp()
+
+
+def test_verify_password_rejects_password_over_72_bytes():
+    hashed = get_password_hash("senha123")
+    oversized_password = "ç" * 37
+
+    assert verify_password(oversized_password, hashed) is False

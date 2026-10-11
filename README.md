@@ -1,0 +1,1 @@
+[![CI](https://github.com/codariadev/securusauth/actions/workflows/ci.yml/badge.svg)](https://github.com/codariadev/securusauth/actions/workflows/ci.yml)
