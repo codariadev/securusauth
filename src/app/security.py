@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+
 import bcrypt
 import jwt
 
@@ -24,6 +25,4 @@ def create_access_token(data: dict) -> str:
         minutes=settings.access_token_expire_minutes
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(
-        to_encode, settings.secret_key, algorithm=settings.algorithm
-    )
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)

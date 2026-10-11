@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -17,8 +19,11 @@ router = APIRouter(tags=["Auth"])
 
 DUMMY_HASH = get_password_hash("dummy-password")
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
+
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+def register(user_in: UserCreate, db: Annotated[Session, Depends(get_db)]):
     email = user_in.email.lower()
 
     existing_user = db.scalar(select(User).where(User.email == email))
@@ -27,16 +32,19 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="Email já cadastrado",
         )
-    
+
     user = User(email=email, hashed_password=get_password_hash(user_in.password))
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
 
-@router.post("/login", response_model=Token)
 
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/login", response_model=Token)
+def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[Session, Depends(get_db)],
+):
     email = form_data.username.lower().strip()
     user = db.scalar(select(User).where(User.email == email))
 
@@ -53,6 +61,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @router.get("/me", response_model=UserResponse)
-def read_current_user(current_user: User = Depends(get_current_user)):
+def read_current_user(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user

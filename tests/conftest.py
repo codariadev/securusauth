@@ -19,6 +19,7 @@ TEST_ENGINE = create_engine(
 )
 TestingSessionLocal = sessionmaker(bind=TEST_ENGINE, autoflush=False, autocommit=False)
 
+
 @pytest.fixture(autouse=True)
 def reset_db():
     """Banco novo e vazio antes de cada teste"""
@@ -26,12 +27,14 @@ def reset_db():
     yield
     Base.metadata.drop_all(bind=TEST_ENGINE)
 
+
 def override_get_db():
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 @pytest.fixture
 def client():

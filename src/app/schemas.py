@@ -1,7 +1,9 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
 
 class UserBase(BaseModel):
     email: EmailStr
+
 
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=72)
@@ -13,11 +15,13 @@ class UserCreate(UserBase):
             raise ValueError("A senha deve ter no máximo 72 bytes")
         return value
 
+
 class UserResponse(UserBase):
     id: int
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class Token(BaseModel):
     access_token: str
