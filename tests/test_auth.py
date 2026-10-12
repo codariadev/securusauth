@@ -10,6 +10,7 @@ def test_login_success(client, registered_user):
     assert response.status_code == 200
     body = response.json()
     assert "access_token" in body
+    assert "refresh_token" in body
     assert body["token_type"] == "bearer"
 
 

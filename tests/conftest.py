@@ -19,6 +19,14 @@ TEST_ENGINE = create_engine(
 )
 TestingSessionLocal = sessionmaker(bind=TEST_ENGINE, autoflush=False, autocommit=False)
 
+@pytest.fixture
+def db_session():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 @pytest.fixture(autouse=True)
 def reset_db():
@@ -37,7 +45,10 @@ def override_get_db():
 
 
 @pytest.fixture
-def client():
+def client(db_session):
+    def override_get_db():
+        yield db_session
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
