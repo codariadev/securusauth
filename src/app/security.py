@@ -1,6 +1,5 @@
 import hashlib
 import secrets
-import secrets
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -11,8 +10,10 @@ import jwt
 from src.app.config import settings
 from src.app.models import RefreshToken
 
+
 def hash_refresh_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
 
 def create_refresh_token(db: Session, user_id: int) -> str:
     token = secrets.token_urlsafe(48)
@@ -24,7 +25,7 @@ def create_refresh_token(db: Session, user_id: int) -> str:
         RefreshToken(
             user_id=user_id,
             token_hash=hash_refresh_token(token),
-            expires_at=expires_at
+            expires_at=expires_at,
         )
     )
     return token

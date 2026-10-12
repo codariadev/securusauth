@@ -19,6 +19,7 @@ TEST_ENGINE = create_engine(
 )
 TestingSessionLocal = sessionmaker(bind=TEST_ENGINE, autoflush=False, autocommit=False)
 
+
 @pytest.fixture
 def db_session():
     db = TestingSessionLocal()

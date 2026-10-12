@@ -18,6 +18,7 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
     )
 
+
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 

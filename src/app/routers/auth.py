@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 from src.app.database import get_db
 from src.app.dependencies import get_current_user
 from src.app.models import RefreshToken, User
-from src.app.schemas import LogoutRequest, RefreshRequest, Token, UserCreate, UserResponse
+from src.app.schemas import (
+    LogoutRequest,
+    RefreshRequest,
+    Token,
+    UserCreate,
+    UserResponse,
+)
 from src.app.security import (
     create_access_token,
     create_refresh_token,
@@ -69,13 +75,14 @@ def login(
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "token_type": "bearer"
-        }
+        "token_type": "bearer",
+    }
 
 
 @router.get("/me", response_model=UserResponse)
 def read_current_user(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
+
 
 @router.post("/refresh", response_model=Token)
 def refresh_tokens(
